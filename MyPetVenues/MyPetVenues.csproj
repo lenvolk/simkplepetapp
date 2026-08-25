@@ -2,6 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
+    <RuntimeFrameworkVersion>9.0.15</RuntimeFrameworkVersion>
+    <TargetLatestRuntimePatch>false</TargetLatestRuntimePatch>
+    <DisableTransitiveFrameworkReferenceDownloads>true</DisableTransitiveFrameworkReferenceDownloads>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -15,6 +18,15 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.5" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NET.Sdk.WebAssembly.Pack" Version="10.0.1" PrivateAssets="all" />
   </ItemGroup>
+
+  <Target Name="UseAvailableNet9Packs" BeforeTargets="ProcessFrameworkReferences">
+    <ItemGroup>
+      <KnownFrameworkReference Update="Microsoft.NETCore.App" Condition="'%(KnownFrameworkReference.TargetFramework)' == 'net9.0'" TargetingPackVersion="9.0.15" LatestRuntimeFrameworkVersion="9.0.15" />
+      <KnownRuntimePack Update="Microsoft.NETCore.App" Condition="'%(KnownRuntimePack.TargetFramework)' == 'net9.0' and '%(KnownRuntimePack.RuntimePackLabels)' == 'Mono'" LatestRuntimeFrameworkVersion="9.0.15" />
+      <KnownILLinkPack Update="Microsoft.NET.ILLink.Tasks" Condition="'%(KnownILLinkPack.TargetFramework)' == 'net9.0'" ILLinkPackVersion="9.0.15" />
+    </ItemGroup>
+  </Target>
 
 </Project>
