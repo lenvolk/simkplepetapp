@@ -1,4 +1,4 @@
-use agent mode with Claude Opus 4.5 model selected
+use agent mode with MAI-Code-1.1-Flash with reasoning effort high  model selected
 attach idea.txt to the chat and prompt: 
 "I want you to create a PRD for the main idea.txt file in
 the repo, put it in a PRD.md file in the root, and then
