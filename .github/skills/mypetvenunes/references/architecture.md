@@ -39,9 +39,11 @@ builder.Services.AddSingleton<IBookingService, MockBookingService>();
 builder.Services.AddScoped<IUserService, MockUserService>();
 ```
 
-**Lifetime Rules:**
-- `Singleton` for stateless services (Theme, Venue, Booking)
-- `Scoped` for services with user-specific state (User)
+**Current Client-Side Lifetimes:**
+- Theme, Venue, and Booking are registered as `Singleton`; User is registered as `Scoped` in `MyPetVenues/Program.cs`.
+- These services belong to the browser's Blazor WebAssembly application, not a shared server process. In the default WASM service provider, scoped services behave like singletons for the running application; navigation does not create a new scope.
+- Singleton does not mean stateless: `ThemeService` stores the current theme, and `MockBookingService` mutates its booking list and ID counter. In-memory changes are not durable across a full page reload.
+- Preserve existing registrations unless the task requires a change. Reassess state ownership and lifetimes before reusing these services in server-side hosting.
 
 ## Service Interfaces
 
@@ -84,7 +86,7 @@ void SetTheme(bool isDarkMode);
 |-------|------|---------|
 | `/` | Home.razor | Landing page with hero, featured venues |
 | `/venues` | Venues.razor | Search/filter venue listing |
-| `/venues/{id}` | VenueDetail.razor | Single venue details + reviews |
+| `/venues/{VenueId:int}` | VenueDetail.razor | Single venue details + reviews |
 | `/profile` | Profile.razor | User profile with tabs |
 | `/booking` | BookVenue.razor | Multi-step booking wizard |
 
@@ -127,7 +129,7 @@ Navigation.NavigateTo($"/venues?type={type}&search={term}");
 
 ## Data Loading Pattern
 
-Use `OnInitializedAsync` for initial data fetch:
+Use `OnInitializedAsync` for one-time data loading that does not depend on changing route or query parameters:
 
 ```csharp
 private List<Venue>? _featuredVenues;
@@ -137,6 +139,24 @@ protected override async Task OnInitializedAsync()
     _featuredVenues = await VenueService.GetFeaturedVenuesAsync();
 }
 ```
+
+For data driven by route parameters or `[SupplyParameterFromQuery]`, use `OnParametersSetAsync` so navigation that reuses the component reloads the data. `Pages/VenueDetail.razor` and `Pages/Venues.razor` demonstrate this distinction. Do not duplicate the same parameter-dependent fetch in both lifecycle methods.
+
+For example, on a page with the `/venues/{VenueId:int}` route and an injected `IVenueService`:
+
+```csharp
+[Parameter]
+public int VenueId { get; set; }
+
+private Venue? _venue;
+
+protected override async Task OnParametersSetAsync()
+{
+    _venue = await VenueService.GetVenueByIdAsync(VenueId);
+}
+```
+
+Handle a null result as not found once loading completes. When requests can overlap, prevent an older response from overwriting data for newer parameters, and keep loading state distinct from empty, not-found, and error states.
 
 Render loading state while data is null:
 ```razor

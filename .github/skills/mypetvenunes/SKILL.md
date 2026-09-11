@@ -34,12 +34,13 @@ MyPetVenues/
 
 ### Service Pattern
 - Interface + Mock implementation
-- Singletons for stateless, Scoped for user-specific
+- Follow the existing registrations in `MyPetVenues/Program.cs`: Theme, Venue, and Booking are Singleton; User is Scoped
+- These are client-side WASM lifetimes, not server-wide or per-request lifetimes; Theme and Booking retain mutable in-memory state
 - Async methods returning `Task<T>`
 
 ### Component Pattern
 - `[Parameter, EditorRequired]` for required props
-- `EventCallback<T>` for output events
+- `EventCallback` for output events without data; `EventCallback<T>` when passing data
 - Scoped CSS file per component using CSS variables
 
 ### Styling Pattern
@@ -71,10 +72,19 @@ Load these based on task:
 4. Add navigation link in Header.razor
 
 ### Add a new service
-1. Define interface in `Services/INewService.cs`
-2. Create mock implementation `Services/MockNewService.cs`
-3. Register in `Program.cs` with appropriate lifetime
+1. Create `Services/NewService.cs` under `MyPetVenues/`, colocating the interface and mock implementation as existing services do
+2. Keep mock data in memory unless the task explicitly calls for backend integration
+3. Register in `Program.cs` with a lifetime appropriate for client-side WASM (see architecture reference); do not split existing service files as incidental cleanup
 
 ### Modify theme colors
 1. Edit CSS variables in `wwwroot/css/app.css`
 2. Update both `:root` (light) and `.dark-mode` sections
+
+## Validation and Scope
+
+- Treat current source files as the reference for signatures, routes, and registrations; check the relevant implementation before copying an example from this skill.
+- Do not manually edit generated `bin/` or `obj/` files. Change their source inputs instead.
+- After application code changes, run `dotnet build MyPetVenues/MyPetVenues.csproj` from the repository root and the narrowest available tests for the changed behavior.
+- For UI changes, run the app and verify the affected workflow at desktop and mobile sizes, in both light and dark mode. Check text overflow, image loading, keyboard access, and browser console errors.
+- For route or query changes, verify direct navigation and navigation between different parameters on the same page component, including loading, empty, and not-found states where applicable.
+- Report which checks ran and any checks that could not run. For skill-only documentation changes, validate metadata and reference links; an application build is not required.
